@@ -39,9 +39,10 @@ jobs:
       - name: Install persistent debug keystore
         # Единый ключ подписи для всех сборок — иначе каждая сборка подписывается
         # новым случайным ключом и APK не ставятся поверх друг друга.
+        # gradle-конфиг RN берёт android/app/debug.keystore (генерируется prebuild),
+        # поэтому перезаписываем его ПОСЛЕ prebuild.
         run: |
-          mkdir -p ~/.android
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ~/.android/debug.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/debug.keystore
 
       - name: Build release APK
         working-directory: android
