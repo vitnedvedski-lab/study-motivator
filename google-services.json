@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "859688081323",
+    "project_id": "st-motiv",
+    "storage_bucket": "st-motiv.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:859688081323:android:de7fa654951ee8346764ee",
+        "android_client_info": {
+          "package_name": "com.studymotivator.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlRA8lySL3j5_1BKfO7xNmHFhlP7-0V7A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsChild(childId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/children/$(childId))
+        && (
+          get(/databases/$(database)/documents/children/$(childId)).data.parentId == request.auth.uid
+          || get(/databases/$(database)/documents/children/$(childId)).data.childDeviceUid == request.auth.uid
+        );
+    }
+
+    function ownsCabinet(cabinetId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/cabinets/$(cabinetId))
+        && (
+          get(/databases/$(database)/documents/cabinets/$(cabinetId)).data.parentId == request.auth.uid
+          || ownsChild(get(/databases/$(database)/documents/cabinets/$(cabinetId)).data.childId)
+        );
+    }
+
+    match /children/{childId} {
+      allow read: if signedIn()
+        && (
+          resource.data.parentId == request.auth.uid
+          || resource.data.childDeviceUid == request.auth.uid
+          || resource.data.linkCode is string
+        );
+      allow create: if signedIn()
+        && request.resource.data.parentId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
+      allow update, delete: if signedIn()
+        && (
+          resource.data.parentId == request.auth.uid
+          || (
+            resource.data.linkCode is string
+            && request.resource.data.childDeviceUid == request.auth.uid
+          )
+        );
+    }
+
+    match /cabinets/{cabinetId} {
+      allow read: if signedIn()
+        && (
+          resource.data.parentId == request.auth.uid
+          || ownsChild(resource.data.childId)
+        );
+      allow create: if signedIn()
+        && request.resource.data.parentId == request.auth.uid
+        && ownsChild(request.resource.data.childId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
+      allow update, delete: if signedIn() && resource.data.parentId == request.auth.uid;
+    }
+
+    match /activities/{activityId} {
+      allow read: if signedIn() && ownsChild(resource.data.childId);
+      allow create: if signedIn()
+        && ownsChild(request.resource.data.childId)
+        && ownsCabinet(request.resource.data.cabinetId)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.type in ['study', 'sport', 'behavior', 'task']
+        && (request.resource.data.points is int || request.resource.data.points is float)
+        && request.resource.data.points >= -100
+        && request.resource.data.points <= 100;
+      allow update, delete: if signedIn() && ownsChild(resource.data.childId);
+    }
+
+    match /rewards/{rewardId} {
+      allow read: if signedIn() && ownsCabinet(resource.data.cabinetId);
+      allow create: if signedIn()
+        && ownsCabinet(request.resource.data.cabinetId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.pointsCost is int
+        && request.resource.data.pointsCost >= 0;
+      allow update, delete: if signedIn() && ownsCabinet(resource.data.cabinetId);
+    }
+
+    match /rewardPurchases/{purchaseId} {
+      allow read: if signedIn() && ownsChild(resource.data.childId);
+      allow create: if signedIn()
+        && ownsChild(request.resource.data.childId)
+        && request.resource.data.pointsSpent is int
+        && request.resource.data.pointsSpent >= 0;
+      allow update, delete: if signedIn() && ownsChild(resource.data.childId);
+    }
+
+    match /achievements/{achievementId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.id == achievementId
+        && request.resource.data.key == achievementId
+        && request.resource.data.title is string
+        && request.resource.data.requirement is int;
+      allow update, delete: if false;
+    }
+
+    match /childAchievements/{childAchievementId} {
+      allow read: if signedIn() && ownsChild(resource.data.childId);
+      allow create: if signedIn()
+        && ownsChild(request.resource.data.childId)
+        && request.resource.data.achievementId is string
+        && request.resource.data.progress is int;
+      allow update, delete: if signedIn() && ownsChild(resource.data.childId);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
