@@ -36,12 +36,12 @@ jobs:
       - name: Expo prebuild (android)
         run: CI=1 npx expo prebuild -p android --clean --no-install
 
-      - name: Build debug APK
+      - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --max-workers=2
+        run: ./gradlew assembleRelease --no-daemon --max-workers=2
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: study-motivator-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: study-motivator-release-apk
+          path: android/app/build/outputs/apk/release/app-re
