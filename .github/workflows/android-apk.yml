@@ -36,6 +36,13 @@ jobs:
       - name: Expo prebuild (android)
         run: CI=1 npx expo prebuild -p android --clean --no-install
 
+      - name: Install persistent debug keystore
+        # Единый ключ подписи для всех сборок — иначе каждая сборка подписывается
+        # новым случайным ключом и APK не ставятся поверх друг друга.
+        run: |
+          mkdir -p ~/.android
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ~/.android/debug.keystore
+
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon --max-workers=2
